@@ -6,10 +6,9 @@ export const DEFAULT_SETTINGS: AdvancedURISettings = {
     openFileOnWriteInNewPane: false,
     openFileWithoutWriteInNewPane: false,
     idField: "id",
-    useUID: false,
-    addFilepathWhenUsingUID: false,
-    allowEval: false,
-    includeVaultName: true,
+    useId: true,
+    addFileNameWhenUsingId: true,
+    includeVaultName: false,
     vaultParam: "name",
     linkFormats: [
         {

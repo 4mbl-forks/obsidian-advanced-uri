@@ -118,9 +118,8 @@ export interface AdvancedURISettings {
     openDailyInNewPane: boolean;
     openFileWithoutWriteInNewPane: boolean;
     idField: string;
-    useUID: boolean;
-    addFilepathWhenUsingUID: boolean;
-    allowEval: boolean;
+    useId: boolean;
+    addFileNameWhenUsingId: boolean;
     includeVaultName: boolean;
     vaultParam: "id" | "name";
     linkFormats: LinkFormat[];
@@ -150,7 +149,7 @@ export interface Parameters {
     search?: string;
     searchregex?: string;
     replace?: string;
-    uid?: string;
+    id?: string;
     filename?: string;
     exists?: string;
     viewmode?: "source" | "preview" | "live";

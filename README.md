@@ -1,3 +1,17 @@
+# This is a fork of [Advanced URI](https://github.com/Vinzent03/obsidian-advanced-uri)
+
+The following changes have been made to the original plugin:
+
+- URI format is `obsidian://file?id={{uuid}}&name={{name}}`
+- UUID dashes are omitted from the URI for compactness
+- File names are truncated to 100 characters
+- Id property is hidden in the metadata pane
+- Cleaned up deprecated functionality
+- Removed ability to execute arbitrary code via eval
+- Changed default settings to better match my use case
+
+This fork is intended for my personal use, and breaking changes may occur at any time.
+
 # Advanced URI
 
 A plugin for [Obsidian](https://obsidian.md)
@@ -8,7 +22,8 @@ A plugin for [Obsidian](https://obsidian.md)
 
 [Advanced URI](https://github.com/Vinzent03/obsidian-advanced-uri) allows you to control many different features in Obsidian just by opening some URIs. Because they are just text and don't require any mouse clicks or keyboard inputs, they are perfect to automate your Obsidian workflow.
 
-You can for example 
+You can for example
+
 - [open files](https://publish.obsidian.md/advanced-uri-doc/Actions/Navigation)
 - [edit files](https://publish.obsidian.md/advanced-uri-doc/Actions/Writing)
 - [create files](https://publish.obsidian.md/advanced-uri-doc/Actions/Writing)
@@ -26,16 +41,19 @@ Please read the [documentation](https://publish.obsidian.md/advanced-uri-doc) fo
 ## Examples
 
 ### Append content from the clipboard to today's daily note
+
 ```uri
 obsidian://adv-uri?vault=<your-vault>&daily=true&clipboard=true&mode=append
 ```
 
 ### Export a file to PDF by calling the command "Export to PDF" via its command ID
+
 ```uri
 obsidian://adv-uri?vault=<your-vault>&filepath=<your-file>&commandid=workspace%3Aexport-pdf
 ```
 
 ### Open heading in a file
+
 ```uri
 obsidian://adv-uri?vault=<your-vault>&filepath=my-file&heading=Goal
 ```

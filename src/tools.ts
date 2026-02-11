@@ -22,7 +22,7 @@ export default class Tools {
         return this.plugin.settings;
     }
 
-    async writeUIDToFile(file: TFile, uid: string): Promise<string> {
+    async writeIdToFile(file: TFile, id: string): Promise<string> {
         const frontmatter =
             this.app.metadataCache.getFileCache(file)?.frontmatter;
         const fileContent: string = await this.app.vault.read(file);
@@ -33,25 +33,25 @@ export default class Tools {
         const key = `${this.plugin.settings.idField}:`;
         if (isYamlEmpty) {
             splitContent.unshift("---");
-            splitContent.unshift(`${key} ${uid}`);
+            splitContent.unshift(`${key} ${id}`);
             splitContent.unshift("---");
         } else {
             const lineIndexOfKey = splitContent.findIndex((line) =>
                 line.startsWith(key)
             );
             if (lineIndexOfKey != -1) {
-                splitContent[lineIndexOfKey] = `${key} ${uid}`;
+                splitContent[lineIndexOfKey] = `${key} ${id}`;
             } else {
-                splitContent.splice(1, 0, `${key} ${uid}`);
+                splitContent.splice(1, 0, `${key} ${id}`);
             }
         }
 
         const newFileContent = splitContent.join("\n");
         await this.app.vault.modify(file, newFileContent);
-        return uid;
+        return id;
     }
 
-    async getUIDFromFile(file: TFile): Promise<string | undefined> {
+    async getIdFromFile(file: TFile): Promise<string | undefined> {
         //await parsing of frontmatter
         const cache =
             this.app.metadataCache.getFileCache(file) ??
@@ -65,21 +65,30 @@ export default class Tools {
                 });
             }));
 
-        const uid = parseFrontMatterEntry(
+        const id = parseFrontMatterEntry(
             cache.frontmatter,
             this.plugin.settings.idField
         );
-        if (uid != undefined) {
-            if (uid instanceof Array) {
-                return uid[0];
+        if (id != undefined) {
+            if (id instanceof Array) {
+                return id[0];
             } else {
-                return uid;
+                return id;
             }
         }
     }
 
-    async generateURI(parameters: Parameters) {
-        const prefix = "obsidian://adv-uri";
+    async generateURI(
+        parameters: Parameters,
+        options?: {
+            excludeParams?: {
+                heading?: boolean;
+            };
+            cleanId?: boolean;
+            nameMaxLength?: number;
+        }
+    ) {
+        const prefix = "obsidian://file";
         let suffix = "";
         const file = this.app.vault.getAbstractFileByPath(parameters.filepath);
         if (this.settings.includeVaultName) {
@@ -91,22 +100,43 @@ export default class Tools {
             }
         }
         if (
-            this.settings.useUID &&
+            this.settings.useId &&
             file instanceof TFile &&
             file.extension == "md"
         ) {
-            if (!this.settings.addFilepathWhenUsingUID)
+            if (!this.settings.addFileNameWhenUsingId)
                 parameters.filepath = undefined;
-            parameters.uid =
-                (await this.getUIDFromFile(file)) ??
-                (await this.writeUIDToFile(file, uuidv4()));
+            const uuid =
+                (await this.getIdFromFile(file)) ??
+                (await this.writeIdToFile(file, uuidv4()));
+            parameters.id = options?.cleanId ? uuid.replaceAll("-", "") : uuid;
         }
+
+        const filterParameters = <K extends keyof Parameters>(
+            parameters: Parameters,
+            exclude?: Partial<Record<K, boolean>>
+        ): Omit<Parameters, K> => {
+            const result = { ...parameters };
+
+            if (exclude) {
+                (Object.keys(exclude) as K[]).forEach((key) => {
+                    if (exclude[key]) {
+                        delete result[key];
+                    }
+                });
+            }
+
+            return result;
+        };
+
         const sortedParameterKeys = (
-            Object.keys(parameters) as (keyof Parameters)[]
+            Object.keys(
+                filterParameters(parameters, options?.excludeParams)
+            ) as (keyof Parameters)[]
         )
             .filter((key) => parameters[key])
             .sort((a, b) => {
-                const first = ["filepath", "filename", "uid", "daily"];
+                const first = ["name", "filename", "id", "daily"];
                 const last = ["data", "eval"];
                 if (first.includes(a)) return -1;
                 if (first.includes(b)) return 1;
@@ -114,13 +144,32 @@ export default class Tools {
                 if (last.includes(b)) return -1;
                 return 0;
             });
+
         for (const parameter of sortedParameterKeys) {
-            if (parameters[parameter] != undefined) {
-                suffix += suffix ? "&" : "?";
-                suffix += `${parameter}=${encodeURIComponent(
-                    parameters[parameter]
-                )}`;
+            if (parameters[parameter] === undefined) continue;
+
+            suffix += suffix ? "&" : "?";
+            if (parameter === "filepath") {
             }
+            const key = parameter === "filepath" ? "name" : parameter;
+            const value =
+                parameter === "filepath"
+                    ? encodeURIComponent(
+                          parameters[parameter]
+                              .replace(
+                                  "." +
+                                      (file && file instanceof TFile
+                                          ? file.extension
+                                          : "md"),
+                                  ""
+                              )
+                              .split("/")
+                              .pop()
+                              ?.replaceAll(" ", "-")
+                              .slice(0, options?.nameMaxLength)
+                      )
+                    : encodeURIComponent(parameters[parameter]);
+            suffix += `${key}=${value}`;
         }
         // When the URI gets decoded, the %20 at the end gets somehow removed.
         // Adding a trailing & to prevent this.
@@ -131,9 +180,18 @@ export default class Tools {
     async copyURI(
         parameters: Parameters,
         withFormat = false,
-        file: TFile = undefined
+        file: TFile = undefined,
+        options?: {
+            excludeParams?: {
+                heading?: boolean;
+            };
+        }
     ) {
-        const uri = await this.generateURI(parameters);
+        const uri = await this.generateURI(parameters, {
+            ...options,
+            cleanId: true,
+            nameMaxLength: 100,
+        });
         if (withFormat) {
             const linkFormats = this.settings.linkFormats;
             if (linkFormats.length == 0) {
@@ -166,9 +224,9 @@ export default class Tools {
                 .replace(/\{\{name\}\}/g, file?.basename)
                 .replace(/\{\{vaultName\}\}/g, this.app.vault.getName())
                 .replace(/\{\{vaultId\}\}/g, this.app.appId);
-            if (file && formattedLink.match(/\{\{uid\}\}/g)) {
-                const uid = (await this.getUIDFromFile(file)) ?? file.basename;
-                formattedLink = formattedLink.replace(/\{\{uid\}\}/g, uid);
+            if (file && formattedLink.match(/\{\{id\}\}/g)) {
+                const id = (await this.getIdFromFile(file)) ?? file.basename;
+                formattedLink = formattedLink.replace(/\{\{id\}\}/g, id);
             }
             if (file && formattedLink.match(/\{\{alias\}\}/g)) {
                 const aliases = parseFrontMatterAliases(
@@ -179,16 +237,16 @@ export default class Tools {
             }
             await copyText(formattedLink);
             new Notice(
-                `Advanced URI in format "${linkFormat.name}" copied to your clipboard`
+                `URI in format "${linkFormat.name}" copied to your clipboard`
             );
             return;
         }
         await copyText(uri);
 
-        new Notice("Advanced URI copied to your clipboard");
+        new Notice("URI copied to your clipboard");
     }
 
-    getFileFromUID(uid: string): TFile | undefined {
+    getFileFromId(id: string): TFile | undefined {
         const files = this.app.vault.getMarkdownFiles();
         const idKey = this.settings.idField;
         for (const file of files) {
@@ -198,9 +256,9 @@ export default class Tools {
             );
 
             if (fieldValue instanceof Array) {
-                if (fieldValue.contains(uid)) return file;
+                if (fieldValue.contains(id)) return file;
             } else {
-                if (fieldValue == uid) return file;
+                if (fieldValue == id) return file;
             }
         }
     }

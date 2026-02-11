@@ -55,7 +55,7 @@ export default class Handlers {
     handleFrontmatterKey(parameters: Parameters) {
         const key = parameters.frontmatterkey;
         const file = this.app.vault.getAbstractFileByPath(
-            parameters.filepath ?? this.app.workspace.getActiveFile().path
+            parameters.filepath ?? this.app.workspace.getActiveFile()?.path
         );
 
         // could not handle frontmatter key that is not a TFile
@@ -279,17 +279,6 @@ export default class Handlers {
                 });
             }
         }
-        if (this.plugin.settings.allowEval) {
-            //Call eval in a global scope
-            const eval2 = eval;
-            eval2(parameters.eval);
-            this.plugin.success(parameters);
-        } else {
-            new Notice(
-                "Eval is not allowed. Please enable it in the settings."
-            );
-            this.plugin.failure(parameters);
-        }
     }
 
     async handleDoesFileExist(parameters: Parameters) {
@@ -415,8 +404,8 @@ export default class Handlers {
                 );
                 this.plugin.success(parameters);
             }
-            if (parameters.uid) {
-                this.tools.writeUIDToFile(outFile, parameters.uid);
+            if (parameters.id) {
+                this.tools.writeIdToFile(outFile, parameters.id);
             }
         } else {
             new Notice("Cannot find file");
@@ -476,10 +465,10 @@ export default class Handlers {
         if (parameters.mode != undefined) {
             await this.plugin.setCursor(parameters);
         }
-        if (parameters.uid) {
+        if (parameters.id) {
             const view = this.app.workspace.getActiveViewOfType(MarkdownView);
 
-            this.tools.writeUIDToFile(view.file, parameters.uid);
+            this.tools.writeIdToFile(view.file, parameters.id);
         }
         this.plugin.success(parameters);
     }
@@ -497,14 +486,19 @@ export default class Handlers {
         }
     }
 
-    handleCopyFileURI(withoutData: boolean, withFormat: boolean, file?: TFile) {
+    handleCopyFileURI(
+        withoutData: boolean,
+        withFormat: boolean,
+        file?: TFile,
+        options?: { excludeParams?: { heading?: boolean } }
+    ) {
         const view = this.app.workspace.getActiveViewOfType(FileView);
         if (!view && !file) return;
         file = file ?? view.file;
         if (view instanceof MarkdownView) {
             const pos = view.editor.getCursor();
             const cache = this.app.metadataCache.getFileCache(view.file);
-            if (cache.headings) {
+            if (cache.headings && options?.excludeParams?.heading !== true) {
                 for (const heading of cache.headings) {
                     if (
                         heading.position.start.line <= pos.line &&
@@ -516,7 +510,8 @@ export default class Handlers {
                                 heading: heading.heading,
                             },
                             withFormat,
-                            file
+                            file,
+                            options
                         );
                         return;
                     }
@@ -535,7 +530,8 @@ export default class Handlers {
                                 block: block.id,
                             },
                             withFormat,
-                            file
+                            file,
+                            options
                         );
                         return;
                     }
@@ -554,7 +550,8 @@ export default class Handlers {
                     filepath: file2.path,
                 },
                 withFormat,
-                file
+                file,
+                options
             );
         } else {
             const fileModal = new FileModal(

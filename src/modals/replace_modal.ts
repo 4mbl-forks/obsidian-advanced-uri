@@ -8,7 +8,7 @@ export class ReplaceModal extends SuggestModal<string> {
     constructor(
         plugin: AdvancedURI,
         private search: SearchModalData,
-        private filepath: string
+        private name: string
     ) {
         super(plugin.app);
         this.plugin = plugin;
@@ -29,13 +29,13 @@ export class ReplaceModal extends SuggestModal<string> {
     onChooseSuggestion(item: string, _: MouseEvent | KeyboardEvent): void {
         if (this.search.isRegEx) {
             this.plugin.tools.copyURI({
-                filepath: this.filepath,
+                filepath: this.name,
                 searchregex: this.search.source,
                 replace: item == this.emptyText ? "" : item,
             });
         } else {
             this.plugin.tools.copyURI({
-                filepath: this.filepath,
+                filepath: this.name,
                 search: this.search.source,
                 replace: item == this.emptyText ? "" : item,
             });

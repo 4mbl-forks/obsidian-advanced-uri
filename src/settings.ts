@@ -60,10 +60,10 @@ export class SettingsTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName("Use UID instead of file paths")
+            .setName("Use ID instead of file paths")
             .addToggle((cb) =>
-                cb.setValue(this.plugin.settings.useUID).onChange((value) => {
-                    this.plugin.settings.useUID = value;
+                cb.setValue(this.plugin.settings.useId).onChange((value) => {
+                    this.plugin.settings.useId = value;
                     this.plugin.saveSettings();
                     this.display();
                 })
@@ -99,43 +99,28 @@ export class SettingsTab extends PluginSettingTab {
                 );
         }
 
-        if (this.plugin.settings.useUID) {
+        if (this.plugin.settings.useId) {
             new Setting(containerEl)
-                .setName("Add filepath parameter")
+                .setName("Add file name parameter")
                 .setDesc(
-                    "When using UID instead of file paths, you can still add the filepath parameter to know what this URI is about. It's NOT actually used."
+                    "When using ID instead of file paths, you can still add the file name parameter to know what this URI is about. It's NOT actually used."
                 )
                 .addToggle((cb) =>
                     cb
-                        .setValue(this.plugin.settings.addFilepathWhenUsingUID)
+                        .setValue(this.plugin.settings.addFileNameWhenUsingId)
                         .onChange((value) => {
-                            this.plugin.settings.addFilepathWhenUsingUID =
-                                value;
+                            this.plugin.settings.addFileNameWhenUsingId = value;
                             this.plugin.saveSettings();
                         })
                 );
         }
         new Setting(containerEl)
-            .setName("UID field in frontmatter")
+            .setName("ID field in frontmatter")
             .addText((cb) =>
                 cb.setValue(this.plugin.settings.idField).onChange((value) => {
                     this.plugin.settings.idField = value;
                     this.plugin.saveSettings();
                 })
-            );
-
-        new Setting(containerEl)
-            .setName("Allow executing arbitrary code via eval")
-            .setDesc(
-                "⚠️ This can be dangerous as it allows executing arbitrary code. Only enable this if you trust the source of the URIs you are using and know what you are doing. ⚠️"
-            )
-            .addToggle((cb) =>
-                cb
-                    .setValue(this.plugin.settings.allowEval)
-                    .onChange((value) => {
-                        this.plugin.settings.allowEval = value;
-                        this.plugin.saveSettings();
-                    })
             );
 
         const formatsHeading = new Setting(containerEl)
@@ -162,7 +147,7 @@ export class SettingsTab extends PluginSettingTab {
         formatsHeading.descEl
             .createEl("p")
             .setText(
-                "{{uid}} - The file's UID, defaults to file name if not available"
+                "{{id}} - The file's ID, defaults to file name if not available"
             );
         formatsHeading.descEl
             .createEl("p")
@@ -212,17 +197,5 @@ export class SettingsTab extends PluginSettingTab {
                 })
             );
         }
-
-        new Setting(containerEl).setName("Support").setHeading();
-
-        new Setting(containerEl)
-            .setName("Donate")
-            .setDesc(
-                "If you like this Plugin, consider donating to support continued development."
-            )
-            .addButton((bt) => {
-                bt.buttonEl.outerHTML =
-                    "<a href='https://ko-fi.com/F1F195IQ5' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://cdn.ko-fi.com/cdn/kofi3.png?v=3' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>";
-            });
     }
 }

@@ -1,0 +1,9 @@
+.metadata-property[data-property-key="id"] {
+    display: none;
+}
+
+.metadata-container:has(
+    .metadata-properties > .metadata-property[data-property-key="id"]:only-child
+) {
+    display: none;
+}

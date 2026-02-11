@@ -1,11 +1,8 @@
 {
-    "id": "obsidian-advanced-uri",
-    "name": "Advanced URI",
-    "description": "Advanced modes for Obsidian URI",
+    "id": "obsidian-durable-uris",
+    "name": "Durable File URI",
+    "description": "Simple but durable Obsidian file URIs",
     "isDesktopOnly": false,
     "js": "main.js",
-    "fundingUrl": "https://ko-fi.com/vinzent",
-    "version": "1.46.1",
-    "author": "Vinzent",
-    "authorUrl": "https://github.com/Vinzent03"
+    "version": "0.1.0"
 }

@@ -40,6 +40,7 @@ import {
     getEndAndBeginningOfHeading,
     getFileUri,
     getViewStateFromMode as getOpenViewStateFromMode,
+    hydrateUuid,
 } from "./utils";
 import { WorkspaceModal } from "./modals/workspace_modal";
 
@@ -230,21 +231,8 @@ export default class AdvancedURI extends Plugin {
             },
         });
 
-        // Old version, which needed each value to be encoded twice
-        this.registerObsidianProtocolHandler("advanced-uri", async (e) => {
-            const parameters = e as unknown as Parameters;
-
-            for (const parameter in parameters) {
-                (parameters as any)[parameter] = decodeURIComponent(
-                    (parameters as any)[parameter]
-                );
-            }
-
-            this.onUriCall(parameters);
-        });
-
         // New version starting with v1.44.0
-        this.registerObsidianProtocolHandler("adv-uri", async (e) => {
+        this.registerObsidianProtocolHandler("file", async (e) => {
             const parameters = e as unknown as Parameters;
 
             this.onUriCall(parameters);
@@ -287,15 +275,25 @@ export default class AdvancedURI extends Plugin {
                 }
 
                 menu.addItem((item) => {
-                    item.setTitle(`Copy Advanced URI`)
+                    item.setTitle(`Copy URI`)
                         .setIcon("link")
                         .setSection("info")
                         .onClick((_) =>
-                            this.handlers.handleCopyFileURI(true, false, file)
+                            this.handlers.handleCopyFileURI(true, false, file, {
+                                excludeParams: { heading: true },
+                            })
                         );
                 });
                 menu.addItem((item) => {
-                    item.setTitle(`Copy formatted Advanced URI`)
+                    item.setTitle(`Copy URI with headings`)
+                        .setIcon("link")
+                        .setSection("info")
+                        .onClick((_) =>
+                            this.handlers.handleCopyFileURI(true, true, file)
+                        );
+                });
+                menu.addItem((item) => {
+                    item.setTitle(`Copy formatted URI`)
                         .setIcon("link")
                         .setSection("info")
                         .onClick((_) =>
@@ -310,11 +308,11 @@ export default class AdvancedURI extends Plugin {
         /** Allows writing to new created daily note without any `Parameters.mode` */
         let createdDailyNote = false;
         this.lastParameters = { ...parameters };
-        if (parameters.uid) {
-            const res = this.tools.getFileFromUID(parameters.uid)?.path;
-            if (res != undefined) {
-                parameters.filepath = res;
-                parameters.uid = undefined;
+        if (parameters.id) {
+            const file = this.tools.getFileFromId(hydrateUuid(parameters.id));
+            if (file?.path != undefined) {
+                parameters.filepath = file.basename;
+                parameters.id = undefined;
             }
         } else if (parameters.filename) {
             let file = this.app.metadataCache.getFirstLinkpathDest(
@@ -338,7 +336,7 @@ export default class AdvancedURI extends Plugin {
                 ? ""
                 : parentFolder.path + "/";
             parameters.filepath =
-                file?.path ??
+                file?.basename ??
                 parentFolderPath + normalizePath(parameters.filename);
         }
         if (parameters.filepath) {
@@ -373,7 +371,10 @@ export default class AdvancedURI extends Plugin {
                 }
             }
             if (dailyNoteFile) {
-                parameters.filepath = dailyNoteFile.path;
+                parameters.filepath = dailyNoteFile.path
+                    .replace(".md", "")
+                    .split("/")
+                    .pop();
             }
         }
         if (parameters.clipboard === "true") {

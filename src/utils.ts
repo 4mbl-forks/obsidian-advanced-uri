@@ -249,3 +249,21 @@ export function getObjFieldByPath(params: { obj: any; key: string }): any {
         return originalObject ? originalObject[key] : undefined;
     }
 }
+
+export function hydrateUuid(compactUuid: string): string {
+    if (!/^[0-9a-fA-F]{32}$/.test(compactUuid)) {
+        throw new Error("Invalid compact UUID format");
+    }
+
+    return (
+        compactUuid.substring(0, 8) +
+        "-" +
+        compactUuid.substring(8, 12) +
+        "-" +
+        compactUuid.substring(12, 16) +
+        "-" +
+        compactUuid.substring(16, 20) +
+        "-" +
+        compactUuid.substring(20, 32)
+    );
+}
